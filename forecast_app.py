@@ -77,7 +77,7 @@ holt = ExponentialSmoothing(y_train, seasonal_periods=12, trend="add", seasonal=
 holt_pred = holt.forecast(len(y_test))
 holt_pred = np.round(holt_pred, 0).astype(int)
 
-st.subheader("Forecasting Using Different Timeseries Models")
+st.subheader(f"Forecasting Using Different Timeseries Models- {selected_case_type} {selected_court}")
 
 # Create an interactive plot with Plotly
 fig = go.Figure()
