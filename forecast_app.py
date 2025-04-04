@@ -33,7 +33,7 @@ selected_case_type = st.sidebar.selectbox("Select Case Type", case_types)
 courts = df[df["CASE_TYPE_NAME"] == selected_case_type]["COURT"].unique()
 selected_court = st.sidebar.selectbox("Select Court", courts)
 
-stationarity = [True, False]
+stationarity = [False, True]
 selected_stationary = st.sidebar.selectbox("Stationarity", stationarity)
 
 # Filter data
