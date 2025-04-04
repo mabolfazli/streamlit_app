@@ -3,7 +3,7 @@ pandas
 numpy
 matplotlib
 seaborn
-sklearn
-pmdarima
-statsmodels
-plotly
+sklearn==1.5.1
+pmdarima==pmdarima
+statsmodels==0.14.2
+plotly==5.24.1
