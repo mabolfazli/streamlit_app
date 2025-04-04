@@ -3,7 +3,7 @@ pandas==2.2.2
 numpy==1.26.4
 matplotlib==3.9.2
 seaborn
-sklearn==1.5.1
+sklearn
 pmdarima==pmdarima
 statsmodels==0.14.2
 plotly==5.24.1
