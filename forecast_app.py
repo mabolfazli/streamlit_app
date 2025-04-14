@@ -10,6 +10,10 @@ import pmdarima as pm
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import plotly.express as px
 import plotly.graph_objects as go
+from dotenv import load_dotenv
+import os
+from io import StringIO
+import requests
 
 
 # Set the page layout to wide
@@ -18,11 +22,17 @@ st.set_page_config(layout="wide")
 # Load data
 @st.cache_data
 def load_data():
-    df = pd.read_csv(path_data + 'monthly_case_filings_1998-2024.csv')
+    df = pd.read_csv(StringIO(res.text))
     df['TIME'] = pd.to_datetime(df[['YEAR', 'MONTH']].assign(DAY=1))
     return df
 
+# get token and make url
 path_data = 'https://raw.githubusercontent.com/adamcohen3/caseload_forecasting/refs/heads/main/Processed_Data/individual_courts/'
+load_dotenv()
+token = os.getenv("GITHUB_TOKEN")
+headers = {'Authorization': f'token {token}'}
+url = "https://raw.githubusercontent.com/Hawaii-State-Judiciary/caseload_forecasting/refs/heads/main/Processed_Data/individual_courts/monthly_case_filings_1998-2024.csv"
+res = requests.get(url, headers=headers)
 df = load_data()
 
 # Sidebar filters
@@ -35,6 +45,11 @@ selected_court = st.sidebar.selectbox("Select Court", courts)
 
 stationarity = [False, True]
 selected_stationary = st.sidebar.selectbox("Stationarity", stationarity)
+seasonality = st.sidebar.slider("Seasonal Period", min_value=2, max_value=12, value=12)
+
+# GBR hyperparameter inputs
+max_depth = st.sidebar.number_input("GBR: Max Depth", min_value=1, max_value=10, value=3, step=1)
+n_estimators = st.sidebar.number_input("GBR: Number of Estimators", min_value=10, max_value=200, value=50, step=10)
 
 # Filter data
 df_case = df[(df["CASE_TYPE_NAME"] == selected_case_type) & (df["COURT"] == selected_court)].copy()
@@ -64,16 +79,16 @@ X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
 y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
 
 # Train models
-gbr = GradientBoostingRegressor(n_estimators=50, max_depth=3)
+gbr = GradientBoostingRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=123)
 gbr.fit(X_train, y_train)
 gbr_pred = gbr.predict(X_test)
 gbr_pred = np.round(gbr_pred, 0).astype(int)
 
-arima = pm.auto_arima(y_train, error_action="ignore", suppress_warnings=True, maxiter=500, m=12, stationary=selected_stationary)
+arima = pm.auto_arima(y_train, error_action="ignore", suppress_warnings=True, maxiter=500, m=seasonality, stationary=selected_stationary)
 arima_pred = arima.predict(n_periods=len(y_test))
 arima_pred = np.round(arima_pred, 0).astype(int)
 
-holt = ExponentialSmoothing(y_train, seasonal_periods=12, trend="add", seasonal="mul", damped_trend=True, use_boxcox=True, initialization_method="estimated").fit()
+holt = ExponentialSmoothing(y_train, seasonal_periods=seasonality, trend="add", seasonal="mul", damped_trend=True, use_boxcox=True, initialization_method="estimated").fit()
 holt_pred = holt.forecast(len(y_test))
 holt_pred = np.round(holt_pred, 0).astype(int)
 
